@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🚲 Bicicleta com Som de Moto — Guia de Implementação</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap');
+
+  :root {
+    --bg: #0d0e13;
+    --surface: #15171f;
+    --card: #1c1f2b;
+    --border: #2a2f42;
+    --accent: #f5a623;
+    --accent2: #e8453c;
+    --accent3: #4fc3f7;
+    --green: #69f0ae;
+    --text: #e8eaf0;
+    --muted: #6b7194;
+    --radius: 12px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, #1a0a00 0%, #0d0e13 50%, #001a2e 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 24px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 30% 50%, rgba(245,166,35,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 50%, rgba(79,195,247,0.06) 0%, transparent 60%);
+  }
+  .header-tag {
+    display: inline-block;
+    background: rgba(245,166,35,0.15);
+    border: 1px solid rgba(245,166,35,0.4);
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 4px 14px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+  header h1 {
+    font-size: clamp(28px, 5vw, 52px);
+    font-weight: 800;
+    line-height: 1.1;
+    position: relative;
+  }
+  header h1 span { color: var(--accent); }
+  header p {
+    color: var(--muted);
+    font-size: 16px;
+    margin-top: 12px;
+    position: relative;
+  }
+
+  /* TABS */
+  .tabs-wrapper {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .tabs-wrapper::-webkit-scrollbar { display: none; }
+  .tab {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 16px 20px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* CONTENT */
+  .content { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* STEP CARDS */
+  .step {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .step:hover { border-color: rgba(245,166,35,0.3); }
+  .step-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 24px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .step-num {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), #e8900a);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: #000;
+    flex-shrink: 0;
+  }
+  .step-title { font-size: 17px; font-weight: 700; flex: 1; }
+  .step-arrow {
+    color: var(--muted);
+    font-size: 18px;
+    transition: transform 0.3s;
+  }
+  .step.open .step-arrow { transform: rotate(90deg); }
+  .step-body {
+    display: none;
+    padding: 0 24px 24px;
+    border-top: 1px solid var(--border);
+  }
+  .step.open .step-body { display: block; padding-top: 20px; }
+
+  /* WIRING TABLE */
+  .wiring-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .wiring-table th {
+    background: rgba(245,166,35,0.1);
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .wiring-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+  }
+  .wiring-table tr:last-child td { border-bottom: none; }
+  .wiring-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .pin { color: var(--accent3); }
+  .pin-dest { color: var(--green); }
+
+  /* CODE BLOCK */
+  .code-block {
+    background: #0a0b10;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent3);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    overflow-x: auto;
+    position: relative;
+  }
+  .code-block pre {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #c8d0e8;
+  }
+  .copy-btn {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: rgba(79,195,247,0.15);
+    border: 1px solid rgba(79,195,247,0.3);
+    color: var(--accent3);
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .copy-btn:hover { background: rgba(79,195,247,0.25); }
+
+  /* ALERT BOXES */
+  .alert {
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 14px 0;
+    font-size: 14px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    line-height: 1.6;
+  }
+  .alert-warn {
+    background: rgba(232,69,60,0.1);
+    border: 1px solid rgba(232,69,60,0.3);
+    color: #ff8a80;
+  }
+  .alert-tip {
+    background: rgba(105,240,174,0.08);
+    border: 1px solid rgba(105,240,174,0.25);
+    color: #69f0ae;
+  }
+  .alert-info {
+    background: rgba(79,195,247,0.08);
+    border: 1px solid rgba(79,195,247,0.25);
+    color: #81d4fa;
+  }
+  .alert-icon { font-size: 18px; flex-shrink: 0; }
+
+  /* FLOW DIAGRAM */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 16px 0;
+  }
+  .flow-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+  }
+  .flow-box.highlight { border-color: var(--accent); color: var(--accent); }
+  .flow-arrow { color: var(--muted); font-size: 20px; }
+
+  /* CHECKLIST */
+  .checklist { list-style: none; margin: 12px 0; }
+  .checklist li {
+    padding: 8px 0;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    line-height: 1.5;
+    cursor: pointer;
+    user-select: none;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .check-box {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+    transition: all 0.2s;
+  }
+  .checklist li.checked .check-box {
+    background: var(--green);
+    border-color: var(--green);
+    color: #000;
+    font-size: 12px;
+  }
+  .checklist li.checked span { text-decoration: line-through; color: var(--muted); }
+
+  /* PROGRESS BAR */
+  .progress-wrap { margin: 24px 0 0; }
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .progress-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--green));
+    border-radius: 3px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  /* COMPONENT GRID */
+  .comp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+  }
+  .comp-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .comp-card:hover { border-color: rgba(245,166,35,0.4); transform: translateY(-2px); }
+  .comp-icon { font-size: 28px; margin-bottom: 8px; }
+  .comp-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .comp-price { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--green); }
+  .comp-note { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  /* SECTION TITLE */
+  .sec-title {
+    font-size: 26px;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+  .sec-title span { color: var(--accent); }
+  .sec-subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 32px;
+    line-height: 1.6;
+  }
+
+  /* SYNTAX COLORS */
+  .kw { color: #c792ea; }
+  .str { color: #c3e88d; }
+  .num { color: #f78c6c; }
+  .cmt { color: #546e7a; font-style: italic; }
+  .fn { color: #82aaff; }
+  .type { color: #ffcb6b; }
+
+  /* BADGE */
+  .badge {
+    display: inline-block;
+    background: rgba(245,166,35,0.15);
+    border: 1px solid rgba(245,166,35,0.3);
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  p { line-height: 1.7; font-size: 14px; color: #b0b4c8; }
+  strong { color: var(--text); }
+  h4 { font-size: 15px; margin: 18px 0 10px; color: var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-tag">🚲 Projeto Maker</div>
+  <h1>Bicicleta Infantil com<br><span>Som de Moto</span></h1>
+  <p>Guia completo de implementação — ESP32 + MAX98357A + microSD</p>
+</header>
+
+<div class="tabs-wrapper">
+  <button class="tab active" onclick="showTab('componentes')">🧩 Componentes</button>
+  <button class="tab" onclick="showTab('montagem')">🔌 Montagem</button>
+  <button class="tab" onclick="showTab('audio')">🔊 Áudios</button>
+  <button class="tab" onclick="showTab('firmware')">💻 Firmware</button>
+  <button class="tab" onclick="showTab('checklist')">✅ Checklist</button>
+</div>
+
+<div class="content">
+
+  <!-- ===== COMPONENTES ===== -->
+  <div id="tab-componentes" class="section active">
+    <div class="sec-title">🧩 <span>Componentes</span> Necessários</div>
+    <p class="sec-subtitle">Tudo que você precisa comprar. Total estimado: <strong>R$ 109–200</strong>. Disponíveis no Mercado Livre, AliExpress ou lojas como Robocore e FilipeFlop.</p>
+
+    <div class="comp-grid">
+      <div class="comp-card">
+        <div class="comp-icon">🧠</div>
+        <div class="comp-name">ESP32 DevKit V1</div>
+        <div class="comp-price">R$ 25–40</div>
+        <div class="comp-note">Cérebro do projeto. ADC + I2S + SPI integrados.</div>
+      </div>
+      <div class="comp-card">
+        <div class="comp-icon">🔊</div>
+        <div class="comp-name">MAX98357A</div>
+        <div class="comp-price">R$ 12–20</div>
+        <div class="comp-note">Amplificador I2S digital. Já vem montado em módulo.</div>
+      </div>
+      <div class="comp-card">
+        <div class="comp-icon">💾</div>
+        <div class="comp-name">Módulo microSD SPI</div>
+        <div class="comp-price">R$ 5–10</div>
+        <div class="comp-note">Lê arquivos WAV do cartão SD via SPI.</div>
+      </div>
+      <div class="comp-card">
+        <div class="comp-icon">🎮</div>
+        <div class="comp-name">Acelerador Hall Effect</div>
+        <div class="comp-price">R$ 15–25</div>
+        <div class="comp-note">Tipo "thumb throttle". 3 fios: VCC, GND, sinal.</div>
+      </div>
+      <div class="comp-card">
+        <div class="comp-icon">🔈</div>
+        <div class="comp-name">Alto-falante 4Ω 5W</div>
+        <div class="comp-price">R$ 15–30</div>
+        <div class="comp-note">Com caixa selada pequena para melhor som externo.</div>
+      </div>
+      <div class="comp-card">
+        <div class="comp-icon">🔋</div>
+        <div class="comp-name">Powerbank 5000mAh</div>
+        <div class="comp-price">R$ 30–60</div>
+        <div class="comp-note">Modelo slim. Preferir "always-on" (não desliga automático).</div>
+      </div>
+      <div class="comp-card">
+        <div class="comp-icon">📢</div>
+        <div class="comp-name">Botão momentâneo</div>
+        <div class="comp-price">R$ 2–5</div>
+        <div class="comp-note">Para a buzina. Resistente, para fixar no guidão.</div>
+      </div>
+      <div class="comp-card">
+        <div class="comp-icon">🪢</div>
+        <div class="comp-name">Velcro + abraçadeiras</div>
+        <div class="comp-price">R$ 5–10</div>
+        <div class="comp-note">Fixação da caixa eletrônica no quadro da bike.</div>
+      </div>
+    </div>
+
+    <div class="alert alert-tip">
+      <div class="alert-icon">💡</div>
+      <div>Você também precisará de: cabo USB-A para Micro-USB (para o powerbank), fios duplos para conexões, e uma caixinha de plástico pequena (tipo "patola") para proteger os eletrônicos das vibrações e da chuva.</div>
+    </div>
+    <div class="alert alert-warn">
+      <div class="alert-icon">⚠️</div>
+      <div><strong>Atenção ao powerbank:</strong> Evite modelos que desligam automaticamente após ~30s de baixo consumo. O ESP32 consome pouco e pode acionar esse recurso. Busque por <strong>"always-on powerbank"</strong> ou teste antes de comprar.</div>
+    </div>
+  </div>
+
+  <!-- ===== MONTAGEM ===== -->
+  <div id="tab-montagem" class="section">
+    <div class="sec-title">🔌 <span>Montagem</span> e Ligações</div>
+    <p class="sec-subtitle">Siga a ordem dos passos. Conecte, teste individualmente, depois monte tudo na bike.</p>
+
+    <div class="step open" id="s1">
+      <div class="step-header" onclick="toggleStep('s1')">
+        <div class="step-num">1</div>
+        <div class="step-title">Módulo microSD → ESP32 via SPI</div>
+        <div class="step-arrow">›</div>
+      </div>
+      <div class="step-body">
+        <div class="flow">
+          <div class="flow-box">microSD</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box highlight">ESP32 (SPI)</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box">MAX98357A (I2S)</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box">Alto-falante</div>
+        </div>
+        <table class="wiring-table">
+          <tr><th>microSD (pino)</th><th>ESP32 (GPIO)</th></tr>
+          <tr><td class="pin">VCC</td><td class="pin-dest">3.3V</td></tr>
+          <tr><td class="pin">GND</td><td class="pin-dest">GND</td></tr>
+          <tr><td class="pin">MISO</td><td class="pin-dest">GPIO 19</td></tr>
+          <tr><td class="pin">MOSI</td><td class="pin-dest">GPIO 23</td></tr>
+          <tr><td class="pin">SCK</td><td class="pin-dest">GPIO 18</td></tr>
+          <tr><td class="pin">CS</td><td class="pin-dest">GPIO 5</td></tr>
+        </table>
+        <div class="alert alert-warn">
+          <div class="alert-icon">⚠️</div>
+          <div>O módulo microSD usa <strong>3.3V</strong> — não conecte em 5V ou ele pode queimar.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" id="s2">
+      <div class="step-header" onclick="toggleStep('s2')">
+        <div class="step-num">2</div>
+        <div class="step-title">MAX98357A → ESP32 via I2S</div>
+        <div class="step-arrow">›</div>
+      </div>
+      <div class="step-body">
+        <table class="wiring-table">
+          <tr><th>MAX98357A (pino)</th><th>ESP32 (GPIO)</th></tr>
+          <tr><td class="pin">VIN</td><td class="pin-dest">5V (pino VIN do ESP32)</td></tr>
+          <tr><td class="pin">GND</td><td class="pin-dest">GND</td></tr>
+          <tr><td class="pin">DIN</td><td class="pin-dest">GPIO 25</td></tr>
+          <tr><td class="pin">BCLK</td><td class="pin-dest">GPIO 27</td></tr>
+          <tr><td class="pin">LRC</td><td class="pin-dest">GPIO 26</td></tr>
+        </table>
+        <div class="alert alert-tip">
+          <div class="alert-icon">💡</div>
+          <div>O MAX98357A recebe <strong>5V</strong> do pino VIN do ESP32 (que vem do powerbank). Os pinos de dados (DIN, BCLK, LRC) são tolerantes a 3.3V — ok conectar direto.</div>
+        </div>
+        <p>Conecte o alto-falante (4Ω 5W) diretamente nos terminais <strong>+</strong> e <strong>–</strong> do MAX98357A.</p>
+      </div>
+    </div>
+
+    <div class="step" id="s3">
+      <div class="step-header" onclick="toggleStep('s3')">
+        <div class="step-num">3</div>
+        <div class="step-title">Acelerador → ESP32 (ADC)</div>
+        <div class="step-arrow">›</div>
+      </div>
+      <div class="step-body">
+        <table class="wiring-table">
+          <tr><th>Fio do acelerador</th><th>ESP32</th></tr>
+          <tr><td class="pin">Vermelho (VCC)</td><td class="pin-dest">3.3V</td></tr>
+          <tr><td class="pin">Preto (GND)</td><td class="pin-dest">GND</td></tr>
+          <tr><td class="pin">Verde (Sinal)</td><td class="pin-dest">GPIO 34 (ADC)</td></tr>
+        </table>
+        <div class="alert alert-info">
+          <div class="alert-icon">ℹ️</div>
+          <div><strong>GPIO 34</strong> é somente entrada (input-only) no ESP32 — ideal para ADC. O acelerador Hall Effect gera ~0.8V (solto) a ~3.8V (fundo), lido como valores ADC de ~800 a ~3800.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" id="s4">
+      <div class="step-header" onclick="toggleStep('s4')">
+        <div class="step-num">4</div>
+        <div class="step-title">Botão de Buzina → ESP32</div>
+        <div class="step-arrow">›</div>
+      </div>
+      <div class="step-body">
+        <table class="wiring-table">
+          <tr><th>Terminal do botão</th><th>ESP32</th></tr>
+          <tr><td class="pin">Terminal 1</td><td class="pin-dest">GPIO 32 (INPUT_PULLUP)</td></tr>
+          <tr><td class="pin">Terminal 2</td><td class="pin-dest">GND</td></tr>
+        </table>
+        <p style="margin-top:12px">Com INPUT_PULLUP configurado no código, o botão ativa quando conecta GPIO32 ao GND (lógica invertida — pressionado = LOW).</p>
+      </div>
+    </div>
+
+    <div class="step" id="s5">
+      <div class="step-header" onclick="toggleStep('s5')">
+        <div class="step-num">5</div>
+        <div class="step-title">Alimentação via Powerbank</div>
+        <div class="step-arrow">›</div>
+      </div>
+      <div class="step-body">
+        <div class="code-block">
+          <pre>Powerbank (USB-A) → Cabo USB-A/Micro-USB → ESP32 DevKit V1</pre>
+        </div>
+        <p>O ESP32 recebe 5V pelo USB, regula internamente para 3.3V e distribui para microSD e acelerador. O MAX98357A usa o pino VIN (5V direto do regulador onboard).</p>
+        <div class="alert alert-tip">
+          <div class="alert-icon">💡</div>
+          <div><strong>Fixação na bike:</strong> Use velcro dupla-face para prender o powerbank ao quadro. Posicione a caixa eletrônica perto do powerbank para minimizar o cabo USB. Abraçadeiras de nylon como segurança extra.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ÁUDIO ===== -->
+  <div id="tab-audio" class="section">
+    <div class="sec-title">🔊 Preparação dos <span>Áudios</span></div>
+    <p class="sec-subtitle">Os sons do motor são o coração do projeto. A qualidade aqui define se o resultado será impressionante ou mediano.</p>
+
+    <div class="step open" id="a1">
+      <div class="step-header" onclick="toggleStep('a1')">
+        <div class="step-num">1</div>
+        <div class="step-title">Estrutura do cartão SD</div>
+        <div class="step-arrow">›</div>
+      </div>
+      <div class="step-body">
+        <p>Formate o cartão SD em <strong>FAT32</strong> e crie a seguinte estrutura:</p>
+        <div class="code-block">
+          <pre>/audio/
+ ├── 0001.wav  → idle (marcha lenta, loop contínuo)
+ ├── 0002.wav  → low (aceleração leve)
+ ├── 0003.wav  → medium (aceleração média)
+ ├── 0004.wav  → high (aceleração máxima)
+ ├── 0005.wav  → buzina
+ ├── 0006.wav  → partida
+ └── 0007.wav  → desaceleração</pre>
+        </div>
+        <div class="alert alert-info">
+          <div class="alert-icon">ℹ️</div>
+          <div><strong>Formato obrigatório:</strong> WAV, 16-bit PCM, Mono, 22050 Hz. Outros formatos (MP3, stereo) exigem código mais complexo e aumentam latência.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" id="a2">
+      <div class="step-header" onclick="toggleStep('a2')">
+        <div class="step-num">2</div>
+        <div class="step-title">Onde baixar os sons</div>
+        <div class="step-arrow">›</div>
+      </div>
+      <div class="step-body">
+        <h4>🆓 Fonte gratuita: freesound.org</h4>
+        <p>Acesse <strong>freesound.org</strong> e pesquise por:</p>
+        <ul style="margin: 12px 0 12px 20px; line-height: 2; font-size: 14px; color: #b0b4c8;">
+          <li><code style="background:#0a0b10; padding:2px 6px; border-radius:4px; color:#c3e88d;">"motorcycle engine loop" license:CC0</code></li>
+          <li><code style="background:#0a0b10; padding:2px 6px; border-radius:4px; color:#c3e88d;">"motorbike idle loop"</code></li>
+          <li><code style="background:#0a0b10; padding:2px 6px; border-radius:4px; color:#c3e88d;">"engine revving loop"</code></li>
+        </ul>
+        <div class="alert alert-tip">
+          <div class="alert-icon">💡</div>
+          <div>Procure sons com <strong>licença CC0</strong> (domínio público). Baixe as versões originais e converta para WAV 22050Hz mono usando <strong>Audacity</strong> (gratuito).</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" id="a3">
+      <div class="step-header" onclick="toggleStep('a3')">
+        <div class="step-num">3</div>
+        <div class="step-title">Converter sons com Audacity</div>
+        <div class="step-arrow">›</div>
+      </div>
+      <div class="step-body">
+        <ol style="margin: 0 0 0 20px; line-height: 2.2; font-size: 14px; color: #b0b4c8;">
+          <li>Abra o arquivo de áudio no <strong>Audacity</strong></li>
+          <li>Menu <strong>Tracks → Stereo to Mono</strong> (se necessário)</li>
+          <li>Menu <strong>Tracks → Resample</strong> → selecione <strong>22050 Hz</strong></li>
+          <li>Ajuste o ponto de loop: o som deve ser contínuo sem clique</li>
+          <li>Menu <strong>File → Export → Export as WAV</strong></li>
+          <li>Selecione: <strong>Signed 16-bit PCM</strong></li>
+          <li>Renomeie para <code style="background:#0a0b10;padding:2px 6px;border-radius:4px;color:#c3e88d;">0001.wav</code>, <code style="background:#0a0b10;padding:2px 6px;border-radius:4px;color:#c3e88d;">0002.wav</code>, etc.</li>
+        </ol>
+        <div class="alert alert-warn">
+          <div class="alert-icon">⚠️</div>
+          <div><strong>Loop sem clique:</strong> O ponto de corte do arquivo deve ser em zero-crossing (onde a onda cruza o zero). O Audacity tem a opção "Find Zero Crossings" no menu Edit para ajudar nisso.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FIRMWARE ===== -->
+  <div id="tab-firmware" class="section">
+    <div class="sec-title">💻 <span>Firmware</span> — Código Completo</div>
+    <p class="sec-subtitle">Cole no Arduino IDE. Instale as bibliotecas necessárias antes de compilar.</p>
+
+    <div class="step open" id="f1">
+      <div class="step-header" onclick="toggleStep('f1')">
+        <div class="step-num">1</div>
+        <div class="step-title">Instalar bibliotecas necessárias</div>
+        <div class="step-arrow">›</div>
+      </div>
+      <div class="step-body">
+        <p>No Arduino IDE, vá em <strong>Sketch → Include Library → Manage Libraries</strong> e instale:</p>
+        <ul style="margin: 12px 0 12px 20px; line-height: 2.2; font-size: 14px; color: #b0b4c8;">
+          <li><strong>ESP32</strong> — Adicione a placa pelo Boards Manager: URL <code style="background:#0a0b10;padding:2px 6px;border-radius:4px;color:#c3e88d;">https://dl.espressif.com/dl/package_esp32_index.json</code></li>
+          <li><strong>ESP32-audioI2S</strong> de schreibfaul (busque por "ESP32 Audio I2S")</li>
+          <li><strong>SD</strong> — já incluída no ESP32 core</li>
+        </ul>
+        <div class="alert alert-info">
+          <div class="alert-icon">ℹ️</div>
+          <div>Em <strong>Tools → Board</strong>, selecione <strong>"ESP32 Dev Module"</strong>. Em <strong>Tools → Partition Scheme</strong>, selecione <strong>"Default 4MB with spiffs"</strong>.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" id="f2">
+      <div class="step-header" onclick="toggleStep('f2')">
+        <div class="step-num">2</div>
+        <div class="step-title">Código principal — main.ino</div>
+        <div class="step-arrow">›</div>
+      </div>
+      <div class="step-body">
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode('code1')">COPIAR</button>
+          <pre id="code1"><span class="cmt">// ================================================
+// Bicicleta Infantil com Som de Moto — ESP32
+// Conexões: ver guia de montagem
+// ================================================</span>
+
+<span class="kw">#include</span> <span class="str">"Audio.h"</span>
+<span class="kw">#include</span> <span class="str">"SD.h"</span>
+<span class="kw">#include</span> <span class="str">"SPI.h"</span>
+
+<span class="cmt">// ---- Pinos ----</span>
+<span class="kw">#define</span> <span class="type">SD_CS</span>     <span class="num">5</span>
+<span class="kw">#define</span> <span class="type">SD_MOSI</span>   <span class="num">23</span>
+<span class="kw">#define</span> <span class="type">SD_MISO</span>   <span class="num">19</span>
+<span class="kw">#define</span> <span class="type">SD_SCK</span>    <span class="num">18</span>
+
+<span class="kw">#define</span> <span class="type">I2S_DOUT</span>  <span class="num">25</span>
+<span class="kw">#define</span> <span class="type">I2S_BCLK</span>  <span class="num">27</span>
+<span class="kw">#define</span> <span class="type">I2S_LRC</span>   <span class="num">26</span>
+
+<span class="kw">#define</span> <span class="type">THROTTLE_PIN</span> <span class="num">34</span>
+<span class="kw">#define</span> <span class="type">HORN_PIN</span>     <span class="num">32</span>
+
+<span class="cmt">// ---- Configuração ----</span>
+<span class="kw">#define</span> <span class="type">THROTTLE_MIN</span>   <span class="num">800</span>
+<span class="kw">#define</span> <span class="type">THROTTLE_MAX</span>   <span class="num">3800</span>
+<span class="kw">#define</span> <span class="type">VOLUME_MIN</span>     <span class="num">5</span>
+<span class="kw">#define</span> <span class="type">VOLUME_MAX</span>     <span class="num">21</span>
+
+Audio audio;
+
+<span class="type">int</span> currentLayer = <span class="num">0</span>;   <span class="cmt">// 0=idle 1=low 2=med 3=high</span>
+<span class="type">bool</span> hornPlaying = <span class="kw">false</span>;
+<span class="type">unsigned long</span> lastChange = <span class="num">0</span>;
+<span class="kw">const</span> <span class="type">char</span>* layers[] = {
+  <span class="str">"/audio/0001.wav"</span>,  <span class="cmt">// idle</span>
+  <span class="str">"/audio/0002.wav"</span>,  <span class="cmt">// low</span>
+  <span class="str">"/audio/0003.wav"</span>,  <span class="cmt">// medium</span>
+  <span class="str">"/audio/0004.wav"</span>   <span class="cmt">// high</span>
+};
+
+<span class="type">void</span> <span class="fn">setup</span>() {
+  Serial.<span class="fn">begin</span>(<span class="num">115200</span>);
+  
+  <span class="cmt">// Inicializa SPI para SD</span>
+  SPI.<span class="fn">begin</span>(<span class="type">SD_SCK</span>, <span class="type">SD_MISO</span>, <span class="type">SD_MOSI</span>, <span class="type">SD_CS</span>);
+  <span class="kw">if</span> (!SD.<span class="fn">begin</span>(<span class="type">SD_CS</span>)) {
+    Serial.<span class="fn">println</span>(<span class="str">"ERRO: Cartão SD não encontrado!"</span>);
+    <span class="kw">while</span>(<span class="num">1</span>);
+  }
+  
+  <span class="cmt">// Configura I2S → MAX98357A</span>
+  audio.<span class="fn">setPinout</span>(<span class="type">I2S_BCLK</span>, <span class="type">I2S_LRC</span>, <span class="type">I2S_DOUT</span>);
+  audio.<span class="fn">setVolume</span>(<span class="type">VOLUME_MIN</span>);
+  
+  <span class="cmt">// Pinos de entrada</span>
+  pinMode(<span class="type">THROTTLE_PIN</span>, INPUT);
+  pinMode(<span class="type">HORN_PIN</span>, INPUT_PULLUP);
+  
+  <span class="cmt">// Inicia com som de partida</span>
+  audio.<span class="fn">connecttoFS</span>(SD, <span class="str">"/audio/0006.wav"</span>);
+  delay(<span class="num">2000</span>);
+  
+  <span class="cmt">// Começa em idle</span>
+  audio.<span class="fn">connecttoFS</span>(SD, layers[<span class="num">0</span>]);
+  currentLayer = <span class="num">0</span>;
+}
+
+<span class="type">void</span> <span class="fn">loop</span>() {
+  audio.<span class="fn">loop</span>();  <span class="cmt">// SEMPRE chamar no loop principal</span>
+  
+  <span class="cmt">// --- Lê acelerador ---</span>
+  <span class="type">int</span> raw = analogRead(<span class="type">THROTTLE_PIN</span>);
+  raw = constrain(raw, <span class="type">THROTTLE_MIN</span>, <span class="type">THROTTLE_MAX</span>);
+  <span class="type">int</span> throttle = map(raw, <span class="type">THROTTLE_MIN</span>, <span class="type">THROTTLE_MAX</span>, <span class="num">0</span>, <span class="num">100</span>);
+  
+  <span class="cmt">// --- Define camada de áudio ---</span>
+  <span class="type">int</span> targetLayer;
+  <span class="kw">if</span> (throttle < <span class="num">10</span>)        targetLayer = <span class="num">0</span>;  <span class="cmt">// idle</span>
+  <span class="kw">else if</span> (throttle < <span class="num">35</span>)   targetLayer = <span class="num">1</span>;  <span class="cmt">// low</span>
+  <span class="kw">else if</span> (throttle < <span class="num">70</span>)   targetLayer = <span class="num">2</span>;  <span class="cmt">// medium</span>
+  <span class="kw">else</span>                       targetLayer = <span class="num">3</span>;  <span class="cmt">// high</span>
+  
+  <span class="cmt">// --- Volume proporcional ao acelerador ---</span>
+  <span class="type">int</span> vol = map(throttle, <span class="num">0</span>, <span class="num">100</span>, <span class="type">VOLUME_MIN</span>, <span class="type">VOLUME_MAX</span>);
+  audio.<span class="fn">setVolume</span>(vol);
+  
+  <span class="cmt">// --- Buzina (prioridade máxima) ---</span>
+  <span class="kw">if</span> (digitalRead(<span class="type">HORN_PIN</span>) == LOW && !hornPlaying) {
+    audio.<span class="fn">stopSong</span>();
+    audio.<span class="fn">connecttoFS</span>(SD, <span class="str">"/audio/0005.wav"</span>);
+    hornPlaying = <span class="kw">true</span>;
+    currentLayer = -<span class="num">1</span>;  <span class="cmt">// força retomada</span>
+  }
+  
+  <span class="cmt">// --- Troca de camada (com debounce 200ms) ---</span>
+  <span class="kw">if</span> (!hornPlaying 
+      && targetLayer != currentLayer
+      && millis() - lastChange > <span class="num">200</span>) {
+    audio.<span class="fn">stopSong</span>();
+    audio.<span class="fn">connecttoFS</span>(SD, layers[targetLayer]);
+    currentLayer = targetLayer;
+    lastChange = millis();
+  }
+}
+
+<span class="cmt">// --- Callback: ao terminar um arquivo, volta ao idle ---</span>
+<span class="type">void</span> <span class="fn">audio_eof_mp3</span>(<span class="kw">const char</span> *info) {
+  <span class="kw">if</span> (hornPlaying) {
+    hornPlaying = <span class="kw">false</span>;
+  }
+  <span class="cmt">// Loops automáticos → relança o arquivo atual</span>
+  audio.<span class="fn">connecttoFS</span>(SD, layers[currentLayer >= <span class="num">0</span> ? currentLayer : <span class="num">0</span>]);
+}</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" id="f3">
+      <div class="step-header" onclick="toggleStep('f3')">
+        <div class="step-num">3</div>
+        <div class="step-title">Upload e Teste</div>
+        <div class="step-arrow">›</div>
+      </div>
+      <div class="step-body">
+        <ol style="margin: 0 0 0 20px; line-height: 2.4; font-size: 14px; color: #b0b4c8;">
+          <li>Conecte o ESP32 ao computador via USB</li>
+          <li>Em <strong>Tools → Board</strong> selecione <strong>ESP32 Dev Module</strong></li>
+          <li>Em <strong>Tools → Port</strong> selecione a porta COM do ESP32</li>
+          <li>Clique em <strong>Upload</strong> (seta →)</li>
+          <li>Abra o <strong>Serial Monitor</strong> (115200 baud) para ver mensagens de debug</li>
+          <li>Teste o acelerador e o botão de buzina antes de montar na bike</li>
+        </ol>
+        <div class="alert alert-warn">
+          <div class="alert-icon">⚠️</div>
+          <div>Se aparecer erro <strong>"SD não encontrado"</strong>: verifique os fios SPI, confirme que o cartão está formatado em FAT32, e que os arquivos WAV estão na pasta <code>/audio/</code>.</div>
+        </div>
+        <div class="alert alert-tip">
+          <div class="alert-icon">💡</div>
+          <div>Use o Serial Monitor para imprimir os valores do ADC do acelerador: <code>Serial.println(raw);</code> dentro do loop. Ajuste <code>THROTTLE_MIN</code> e <code>THROTTLE_MAX</code> conforme os valores reais do seu acelerador.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CHECKLIST ===== -->
+  <div id="tab-checklist" class="section">
+    <div class="sec-title">✅ <span>Checklist</span> de Montagem</div>
+    <p class="sec-subtitle">Marque cada etapa conforme avança. O progresso é salvo automaticamente.</p>
+
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span>Progresso do projeto</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+
+    <h4 style="margin-top:28px">🛒 Compras</h4>
+    <ul class="checklist" id="cl">
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Comprar ESP32 DevKit V1</span></li>
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Comprar módulo MAX98357A I2S</span></li>
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Comprar módulo microSD SPI</span></li>
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Comprar acelerador Hall Effect (thumb throttle)</span></li>
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Comprar alto-falante 4Ω 5W + caixa acústica pequena</span></li>
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Comprar powerbank 5000mAh slim (always-on)</span></li>
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Comprar botão momentâneo para buzina</span></li>
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Separar fios, velcro, abraçadeiras e caixinha plástica</span></li>
+    </ul>
+
+    <h4>💾 Preparação de software</h4>
+    <ul class="checklist" id="cl2">
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Instalar Arduino IDE</span></li>
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Adicionar suporte ao ESP32 no Boards Manager</span></li>
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Instalar biblioteca ESP32-audioI2S</span></li>
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Baixar sons de motor no freesound.org (licença CC0)</span></li>
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Converter sons para WAV 16-bit PCM Mono 22050Hz no Audacity</span></li>
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Formatar cartão SD em FAT32 e copiar arquivos para /audio/</span></li>
+    </ul>
+
+    <h4>🔌 Montagem eletrônica</h4>
+    <ul class="checklist" id="cl3">
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Conectar módulo microSD ao ESP32 (SPI)</span></li>
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Conectar MAX98357A ao ESP32 (I2S)</span></li>
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Conectar alto-falante ao MAX98357A</span></li>
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Conectar acelerador ao GPIO34</span></li>
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Conectar botão de buzina ao GPIO32</span></li>
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Fazer upload do código e testar no Serial Monitor</span></li>
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Calibrar valores THROTTLE_MIN e THROTTLE_MAX</span></li>
+    </ul>
+
+    <h4>🚲 Instalação na bicicleta</h4>
+    <ul class="checklist" id="cl4">
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Fixar caixa eletrônica no quadro com velcro e abraçadeiras</span></li>
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Prender powerbank no quadro (velcro + elástico)</span></li>
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Instalar acelerador no guidão</span></li>
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Instalar botão de buzina no guidão</span></li>
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Posicionar alto-falante (caixa acústica virada para frente)</span></li>
+      <li onclick="toggleCheck(this)"><div class="check-box"></div><span>Teste final completo — som de partida, aceleração, buzina</span></li>
+    </ul>
+  </div>
+
+</div><!-- /content -->
+
+<script>
+  function showTab(id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    event.currentTarget.classList.add('active');
+  }
+
+  function toggleStep(id) {
+    document.getElementById(id).classList.toggle('open');
+  }
+
+  function toggleCheck(li) {
+    li.classList.toggle('checked');
+    const cb = li.querySelector('.check-box');
+    cb.textContent = li.classList.contains('checked') ? '✓' : '';
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const all = document.querySelectorAll('.checklist li');
+    const done = document.querySelectorAll('.checklist li.checked');
+    const pct = Math.round((done.length / all.length) * 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-pct').textContent = pct + '%';
+  }
+
+  function copyCode(id) {
+    const el = document.getElementById(id);
+    const text = el.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = el.parentElement.querySelector('.copy-btn');
+      btn.textContent = 'COPIADO!';
+      setTimeout(() => btn.textContent = 'COPIAR', 2000);
+    });
+  }
+</script>
+</body>
+</html>
